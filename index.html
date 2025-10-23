@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highway Traffic Dodger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <div id="gameWrapper" class="relative w-full h-full max-w-4xl flex justify-center">
+
+        <div id="gameContainer" class="game-container">
+            <div class="absolute top-4 left-4 p-2 bg-slate-800 rounded-lg shadow-xl text-lg font-bold z-20">
+                Score: <span id="scoreDisplay">0</span>
+            </div>
+
+            <button id="boostButton" class="absolute top-4 right-4 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-full shadow-lg z-20 transition duration-150 opacity-100 disabled:opacity-50" disabled>
+                BOOST
+            </button>
+            <div id="boostIndicator" class="absolute top-[70px] right-4 w-20 h-2 bg-gray-600 rounded-full z-20 overflow-hidden">
+                <div id="boostBar" class="h-full bg-cyan-400" style="width:100%"></div>
+            </div>
+            <div id="gameOverlay" class="game-message absolute inset-0 flex flex-col items-center justify-center p-8 text-center hidden fade-in">
+                <h1 id="overlayTitle" class="text-4xl font-extrabold mb-4 text-yellow-400">GIANCARLO'S TRAFFIC DODGER</h1>
+                <p id="overlayMessage" class="text-lg mb-6 text-gray-300">Dodge the traffic! Use A/Left Arrow and D/Right Arrow keys, or the buttons below. Use the **BOOST** button or **Shift/W** to temporarily double your speed and score, but watch out for traffic!</p>
+                <button id="startButton" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
+                    START GAME
+                </button>
+                <div id="gameOverStats" class="mt-4 hidden text-left w-full max-w-xs p-4 bg-slate-800 rounded-lg">
+                    <p class="text-xl font-semibold mb-2 text-red-400">Game Over</p>
+                    <p>Final Score: <span id="finalScore">0</span></p>
+                    <p>High Score: <span id="highScore">0</span></p>
+                </div>
+            </div>
+
+            <div id="mobileControls" class="absolute bottom-0 w-full flex justify-between p-4 z-20 md:hidden">
+                <button id="leftButton" class="touch-control w-1/3 h-16 rounded-xl text-2xl font-bold text-white flex items-center justify-center">
+                    &lt;
+                </button>
+                <button id="rightButton" class="touch-control w-1/3 h-16 rounded-xl text-2xl font-bold text-white flex items-center justify-center">
+                    &gt;
+                </button>
+            </div>
+            
+        </div>
+
+        <div class="hidden lg:block w-72 ml-8 p-6 bg-slate-800 rounded-xl shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4 text-blue-400">Leaderboard</h2>
+            <p id="authStatus" class="text-sm text-gray-400 mb-4">Loading user...</p>
+            <div id="leaderboardList" class="space-y-2">
+                <p class="text-gray-500">No scores yet.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
