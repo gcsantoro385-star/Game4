@@ -33,15 +33,66 @@ body {
 .road-line-left { left: 33.33%; transform: translateX(-50%); }
 .road-line-right { right: 33.33%; transform: translateX(50%); }
 
-.player-car, .enemy-car {
+/* --- NEW ROAD OBJECT STYLES --- 
+This class is the base for all moving objects (cars, trucks, obstacles)
+*/
+.road-object {
     position: absolute;
-    width: 40px;
-    height: 70px;
     border-radius: 8px;
-    transition: left 0.1s ease-out; /* Smooth lane switching */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+    transition: left 0.1s ease-out; /* Smooth lane switching for player */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
     border: 2px solid rgba(255, 255, 255, 0.3);
     z-index: 10;
+    /* The width/height for these are set dynamically in JavaScript, 
+       but we define general styles here. */
+}
+
+/* Standard car styling (now uses .road-object) */
+.player-car, .enemy-car {
+    /* Dimensions are 40px/70px, set in JS */
+}
+
+/* NEW FEATURE: TRUCK STYLING (1000+ points) */
+.enemy-truck {
+    /* Dimensions are 50px/100px, set in JS */
+    border-radius: 8px 8px 4px 4px; /* More blocky look */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
+    border-width: 3px;
+}
+
+/* NEW FEATURE: BUS STYLING (1000+ points) */
+.enemy-bus {
+    /* Dimensions are 50px/100px, set in JS */
+    border-radius: 6px; 
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+    border-width: 2px;
+}
+
+
+/* NEW FEATURE: OBSTACLE STYLING (2000+ points) */
+
+.obstacle-cone {
+    /* Dimensions are 40px/40px, set in JS */
+    border-radius: 50%; /* Circle base for a simple cone shape */
+    border: 2px solid #ffaa00;
+    /* Visual stripe effect */
+    background: linear-gradient(0deg, #ffaa00 0%, #ffaa00 30%, #374151 30%, #374151 70%, #ffaa00 70%, #ffaa00 100%);
+    box-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
+    z-index: 11; /* Slightly higher z-index to stand out */
+}
+
+.obstacle-sign {
+    /* Dimensions are 40px/40px, set in JS */
+    border-radius: 4px;
+    border: 3px solid black;
+    /* Construction sign diagonal stripes */
+    background: repeating-linear-gradient(45deg, 
+        #facc15, /* Yellow */
+        #facc15 10px, 
+        #1f2937 10px, /* Dark Gray/Black */
+        #1f2937 20px
+    );
+    z-index: 11;
 }
 
 /* NEW FUNCTIONALITY: Boost effect styling (glow) */

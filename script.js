@@ -8,6 +8,11 @@ const GAME_WIDTH = 400; // Matches max-w-400px
 const GAME_HEIGHT = window.innerHeight;
 const CAR_WIDTH = 40;
 const CAR_HEIGHT = 70;
+// NEW DIMENSIONS
+const TRUCK_WIDTH = 50;
+const TRUCK_HEIGHT = 100;
+const OBSTACLE_SIZE = 40; // For cones/signs
+
 const LANE_WIDTH = GAME_WIDTH / 3;
 const PLAYER_LANES = [LANE_WIDTH / 2 - CAR_WIDTH / 2, LANE_WIDTH + LANE_WIDTH / 2 - CAR_WIDTH / 2, LANE_WIDTH * 2 + LANE_WIDTH / 2 - CAR_WIDTH / 2];
 
@@ -18,7 +23,7 @@ let score = 0;
 let gameSpeed = 5; // Base speed
 let roadOffset = 0;
 let lineMarkers = [];
-let lastEnemyTime = 0;
+let lastEnemyTime = 0; // This will now be correctly reset
 let currentLane = 1; // 0, 1, 2
 let maxHighScore = 0;
 
@@ -72,23 +77,75 @@ const base64ToArrayBuffer = (base64) => {
 
 // --- GAME OBJECTS AND CLASSES ---
 
-class Car {
-    constructor(x, y, color, isPlayer = false) {
+class RoadObject { // Renamed from Car
+    constructor(x, y, type, color, isPlayer = false) { // Added 'type' argument
         this.x = x;
         this.y = y;
-        this.width = CAR_WIDTH;
-        this.height = CAR_HEIGHT;
-        this.color = color;
+        this.type = type;
         this.isPlayer = isPlayer;
 
+        // Set dimensions based on type
+        switch (type) {
+            case 'truck':
+            case 'bus':
+                this.width = TRUCK_WIDTH;
+                this.height = TRUCK_HEIGHT;
+                break;
+            case 'cone':
+            case 'sign':
+                this.width = OBSTACLE_SIZE;
+                this.height = OBSTACLE_SIZE;
+                break;
+            case 'car':
+            default:
+                this.width = CAR_WIDTH;
+                this.height = CAR_HEIGHT;
+                break;
+        }
+
+        this.color = color;
+
         this.element = document.createElement('div');
-        // CUSTOM LOOK: Player car now uses a distinct Emerald color
-        this.element.className = 'car ' + (isPlayer ? 'player-car bg-emerald-500' : `enemy-car ${color}`);
+        let elementClasses = 'road-object'; // Base class for all road elements
+        
+        // Determine classes based on type
+        if (isPlayer) {
+            elementClasses += ' player-car bg-emerald-500';
+        } else {
+            // Add specific classes for visual style
+            switch (type) {
+                case 'truck':
+                    elementClasses += ` enemy-truck ${color}`;
+                    break;
+                case 'bus':
+                    elementClasses += ` enemy-bus ${color}`;
+                    break;
+                case 'cone':
+                    elementClasses += ' obstacle-cone bg-orange-500';
+                    // Adjust x to center the obstacle in the lane
+                    this.x = x - (this.width - CAR_WIDTH) / 2;
+                    break;
+                case 'sign':
+                    elementClasses += ' obstacle-sign bg-yellow-400 border-2 border-black';
+                    this.x = x - (this.width - CAR_WIDTH) / 2;
+                    break;
+                case 'car':
+                default:
+                    elementClasses += ` enemy-car ${color}`;
+                    break;
+            }
+        }
+        
+        this.element.className = elementClasses;
+        this.element.style.width = `${this.width}px`; // Apply dynamic width
+        this.element.style.height = `${this.height}px`; // Apply dynamic height
         this.element.style.left = `${this.x}px`;
         this.element.style.top = `${this.y}px`;
         
-        // Add a small internal detail for a modern look
-        this.element.innerHTML = '<div class="absolute inset-x-2 top-2 h-2 bg-white/20 rounded-full"></div>';
+        // Add internal detail for vehicles only
+        if (type === 'car' || type === 'truck' || type === 'bus') {
+            this.element.innerHTML = '<div class="absolute inset-x-2 top-2 h-2 bg-white/20 rounded-full"></div>';
+        }
 
         gameContainer.appendChild(this.element);
     }
@@ -124,6 +181,7 @@ function initGame() {
     traffic = [];
     gameSpeed = 5;
     roadOffset = 0;
+    lastEnemyTime = 0; // <-- THE FIX: Ensures enemies start spawning immediately
     currentLane = 1; // Start in the middle lane
     
     // NEW: Reset Boost state
@@ -133,14 +191,14 @@ function initGame() {
     updateBoostDisplay();
 
 
-    // Clear all previous cars and lines
-    document.querySelectorAll('.player-car, .enemy-car, .road-line').forEach(el => el.remove());
+    // Clear all previous road objects and lines
+    document.querySelectorAll('.road-object, .road-line').forEach(el => el.remove());
     lineMarkers = [];
 
-    // Initialize player car
+    // Initialize player car (using RoadObject now)
     const initialX = PLAYER_LANES[currentLane];
     const initialY = GAME_HEIGHT - CAR_HEIGHT - 50;
-    playerCar = new Car(initialX, initialY, 'bg-emerald-500', true);
+    playerCar = new RoadObject(initialX, initialY, 'car', null, true); // Added type 'car' and null color
 
     scoreDisplay.textContent = score;
 
@@ -174,13 +232,37 @@ function createRoadLine(y) {
 function spawnEnemy() {
     const lane = Math.floor(Math.random() * 3);
     const x = PLAYER_LANES[lane];
-    const color = ['bg-red-500', 'bg-yellow-500', 'bg-purple-500'][Math.floor(Math.random() * 3)];
     
+    // Default values for a regular car
+    let enemyType = 'car';
+    let color = ['bg-red-500', 'bg-yellow-500', 'bg-purple-500'][Math.floor(Math.random() * 3)];
+    let spawnHeight = -CAR_HEIGHT - 10; // Default car spawn Y
+
+    // --- SCORE-BASED ENEMY LOGIC ---
+
+    if (score >= 2000) {
+        // After 2000 points, 10% chance for a traffic cone/sign
+        if (Math.random() < 0.1) {
+            enemyType = Math.random() < 0.5 ? 'cone' : 'sign';
+            color = null; // Obstacles don't need a color class
+            spawnHeight = -OBSTACLE_SIZE - 10; // Use obstacle size for spawn Y
+        }
+    }
+    
+    if (score >= 1000 && enemyType === 'car') {
+        // After 1000 points, if not an obstacle, 20% chance for a truck or bus
+        if (Math.random() < 0.2) {
+            enemyType = Math.random() < 0.5 ? 'truck' : 'bus';
+            color = ['bg-blue-800', 'bg-gray-600', 'bg-lime-700'][Math.floor(Math.random() * 3)];
+            spawnHeight = -TRUCK_HEIGHT - 10; // Use truck size for spawn Y
+        }
+    }
+
     // Spawn just above the visible screen
-    const enemy = new Car(x, -CAR_HEIGHT - 10, color, false);
+    const enemy = new RoadObject(x, spawnHeight, enemyType, color, false);
     traffic.push(enemy);
 
-    // Adjust spawn rate based on speed (min 800ms between cars)
+    // Adjust spawn rate based on speed (min 800ms between objects)
     lastEnemyTime = game.frameCount;
 }
 
@@ -232,18 +314,18 @@ function gameLoop(timestamp) {
         line.el.style.top = `${line.y}px`;
     });
 
-    // 4. Enemy Car Movement and Spawning
+    // 4. Enemy Object Movement and Spawning
     const spawnInterval = Math.max(20, 100 - gameSpeed * 5); // Faster speed = shorter interval
     if (game.frameCount - lastEnemyTime > spawnInterval) {
         spawnEnemy();
     }
 
-    traffic.forEach(car => car.update(currentSpeed)); // Traffic moves at current speed
+    traffic.forEach(obj => obj.update(currentSpeed)); // Traffic moves at current speed
 
-    // Remove off-screen cars
-    traffic = traffic.filter(car => {
-        if (car.y > GAME_HEIGHT) {
-            car.remove();
+    // Remove off-screen objects
+    traffic = traffic.filter(obj => {
+        if (obj.y > GAME_HEIGHT) {
+            obj.remove();
             return false;
         }
         return true;
